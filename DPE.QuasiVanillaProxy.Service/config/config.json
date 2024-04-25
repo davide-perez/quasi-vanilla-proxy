@@ -1,0 +1,47 @@
+{
+  "Proxy": {
+    "CurrentProtocol": "Http",
+    "CurrentAuthentication": "OAuth2_0",
+    "Protocol": {
+      "Tcp": {
+        "ProxyIPAddress": "127.0.0.1",
+        "ProxyPort": "16000",
+        "TargetUrl": "https://example.com/"
+      },
+      "Http": {
+        "ProxyUrl": "http://localhost:16000",
+        "TargetUrl": "https://example.com/"
+      }
+    },
+    "Authentication": {
+      "Basic": {
+        "UserName": "",
+        "Password": ""
+      },
+      "OAuth2_0": {
+        "Authority": "",
+        "ClientId": "",
+        "ClientSecret": "",
+        "Scope": ""
+      }
+    }
+  },
+  "Serilog": {
+    "MinimumLevel": "Debug",
+    "Enrich": [
+      "FromLogContext"
+    ],
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs\\log.log",
+          "rollingInterval": "Day"
+        }
+      }
+    ]
+  }
+}
