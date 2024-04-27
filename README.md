@@ -65,11 +65,11 @@ Any setting of the proxy, such as protocol, authentication and logging setups, c
 
 The `config.json` file is created at the first start-up (or re-created if it does not exist in the executable folder). 
 
-The `CurrentProtocol` property defines if the proxy run as an HTTP proxy (listening on an HTTP address) or as a TCP proxy (listening on a port). Depending on the value of such property, the properties in the `Protocol.Tcp` section or in the `Protocol.Http` section will be relevant.
+The `Proxy.CurrentProtocol` property defines if the proxy run as an HTTP proxy or as a TCP proxy. Allowed values are `Tcp` and `Http`. Depending on the value of such property, the properties in the `Proxy.Protocol.Tcp` section or in the `Proxy.Protocol.Http` section will be relevant.
 
-The `CurrentAuthentication` property defines if the proxy will handle authentication on the client's behalf, i.e. creating and adding an auth header on the data prior forwarding it, using the specified authentication method. Depending on the value of such property, the properties in the `Protocol.Tcp` section or in the `Protocol.Http` section will be relevant.
+The `Proxy.CurrentAuthentication` property defines if the proxy will handle authentication on the client's behalf, i.e. creating and adding an auth header on the data prior forwarding it, using the specified authentication method. Allowed values are `Basic` and `OAuth2.0`. Depending on the value of such property, the properties in the `Proxy.Authentucation.Basic` section or in the `Proxy.Authentication.OAuth2_0` section will be relevant.
 
-Sensible properties such as `Authentication.Basic.Password` and `Authentication.OAuth2_0.ClientSecret` are automatically encrypted at the program start-up.
+Sensible properties such as `Proxy.Authentication.Basic.Password` and `Proxy.Authentication.OAuth2_0.ClientSecret` are automatically encrypted at the program start-up.
 Before:
 
 ```
