@@ -1,8 +1,6 @@
-# quasi-vanilla-proxy
+# Quasi-Vanilla Proxy
 
 A simple, lightweight .NET proxy that aims to facilitate seamless API integration between applications, forwarding traffic to an HTTP/S URL and handling authentication and payload manipulation on behalf of the client application.
-
-Supports running as a console app or as a background service.
  
 ## Use cases
 Integration between business software systems can be challenging, especially when there are multiple vendors or legacy applications involved. APIs of the involved software systems may have strict requirements for what concerns authentication or data formatting, and often changes for these functionalities are either expensive or simply unfeasible.
@@ -19,6 +17,22 @@ Some example of possible use-cases:
  - **Multi-protocol**: currently supports TCP and HTTP clients
  - **Authentication**: can take care of various authentication methods on behalf of the client. Currently supports **Basic Auth** and **OAuth2.0 with Client Credentials Flow**.
  - **Extensibility**: aims to be easily customizable and extendible
+
+## Installation
+Currently, there is no installer for QV-proxy and it has to be built directly from source code.
+
+1. Clone the QV-proxy repository from GitHub: `git clone https://github.com/example/quasi-vanilla-proxy.git`
+2. Navigate to the cloned directory: `cd quasi-vanilla-proxy`
+3. Build the project using the .NET SDK: `dotnet build`
+4. Modify the `config.json` file as needed (see next section)
+5. Run the built executable: `dotnet run --project DPE.QuasiVanillaProxy.Service`
+
+This will run the program as a console app by default.
+The program can also be deployed as a Windows Service starting from the executable: 
+
+`sc.exe create <new_service_name> binPath= "<path_to_the_service_executable>"`
+
+In both cases, the base directory will be set as the executable folder: config and log folder will be created there.
 
 ## Configuration
 Any setting of the proxy, such as protocol, authentication and logging setups, can be easily be configured using a config.json file. Such file has this structure: 
@@ -117,3 +131,5 @@ After the program is run:
 Any time those properties are manually changed in the configuration file, they will be re-encrypted at the program next run.
 
 The `Serilog` section contains the Serilog basic configuration. It may be extended following [the related documentation](https://github.com/serilog/serilog-settings-configuration).
+
+
