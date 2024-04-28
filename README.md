@@ -153,9 +153,10 @@ Thank you for considering contributing to the Quasi-Vanilla Proxy project! Here'
 - **Feedback**: share your thoughts, ideas, and suggestions for improving the proxy. Your feedback is valuable and helps shape the future of the project.
 
 ### Guidelines:
-Fork the repository and create a new branch for your changes.
-Follow existing code style and formatting conventions.
-Test your changes thoroughly before submitting a pull request.
-Provide clear and descriptive commit messages.
-Be respectful and constructive in all interactions within the project.
-Thank you for contributing to the QV-proxy project! Your efforts help make the proxy better for everyone. If you have any questions, feel free to reach out to the project maintainers. We appreciate your support!
+- Fork the repository and create a new branch for your changes.
+- Follow existing code style and formatting conventions.
+- Test your changes thoroughly before submitting a pull request.
+- Provide clear and descriptive commit messages.
+- Be respectful and constructive in all interactions within the project.
+
+Thank you for contributing to the QV-proxy project! Your efforts help make the proxy better for everyone. If you have any questions, feel free to reach out. Your support is appreciated!
