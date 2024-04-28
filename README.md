@@ -32,7 +32,7 @@ The program can also be deployed as a Windows Service starting from the executab
 
 `sc.exe create <new_service_name> binPath= "<path_to_the_service_executable>"`
 
-In both cases, the base directory will be set as the executable folder: config and log folder will be created there.
+In both cases, the base directory will be set as the executable folder (the application will create and read its files there).
 
 ## Configuration
 Any setting of the proxy, such as protocol, authentication and logging setups, can be easily be configured using a config.json file. Such file has this structure: 
