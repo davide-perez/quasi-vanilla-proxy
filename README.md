@@ -21,7 +21,7 @@ Some example of possible use-cases:
 ## Installation
 Currently, there is no installer for QV-proxy and it has to be built directly from source code.
 
-1. Clone the QV-proxy repository from GitHub: `git clone https://github.com/example/quasi-vanilla-proxy.git`
+1. Clone the QV-proxy repository from GitHub: `git clone https://github.com/davide-perez/quasi-vanilla-proxy.git`
 2. Navigate to the cloned directory: `cd quasi-vanilla-proxy`
 3. Build the project using the .NET SDK: `dotnet build`
 4. Modify the `config.json` file as needed (see next section)
@@ -32,7 +32,7 @@ The program can also be deployed as a Windows Service starting from the executab
 
 `sc.exe create <new_service_name> binPath= "<path_to_the_service_executable>"`
 
-In both cases, the base directory will be set as the executable folder (the application will create and read its files there).
+In both cases, the base directory will be set as the executable folder: the configuration file and the log files will be written and read from there.
 
 ## Configuration
 Any setting of the proxy, such as protocol, authentication and logging setups, can be easily be configured using a config.json file. Such file has this structure: 
