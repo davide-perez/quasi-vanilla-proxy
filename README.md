@@ -1,6 +1,6 @@
 # Quasi-Vanilla Proxy
 
-A simple, lightweight .NET proxy that aims to facilitate seamless API integration between applications, forwarding traffic to an HTTP/S URL and handling authentication and payload manipulation on behalf of the client application.
+A simple, lightweight .NET forwarder proxy that aims to facilitate API integration between applications, forwarding traffic to an HTTP/S URL and handling authentication and payload manipulation on behalf of the client application.
  
 ## Use cases
 Integration between business software systems can be challenging, especially when there are multiple vendors or legacy applications involved. APIs of the involved software systems may have strict requirements for what concerns authentication or data formatting, and often changes for these functionalities are either expensive or simply unfeasible.
@@ -13,7 +13,8 @@ Some example of possible use-cases:
 - **Enabling HTTP**: there are legacy business applications still do not support HTTP (happens often than you believe!), but may only support transport-level protocols such as TCP. QV-proxy supports these protocols, receiving the data and then forwarding it to the target URL.
 
 ## Features
- - **Easy to configure**: can easily be configured via a single configuration file, that automatically encrypts sensible properties
+ - **Easy to configure**: can easily be configured via a single configuration file
+ - **Secure**: sensible properties, such as credentials in the configuration file and the JWT access token, are automatically encrypted using [DPAPI](https://en.wikipedia.org/wiki/Data_Protection_API)
  - **Multi-protocol**: currently supports TCP and HTTP clients
  - **Authentication**: can take care of various authentication methods on behalf of the client. Currently supports **Basic Auth** and **OAuth2.0 with Client Credentials Flow**.
  - **Extensibility**: aims to be easily customizable and extendible
@@ -132,4 +133,14 @@ Any time those properties are manually changed in the configuration file, they w
 
 The `Serilog` section contains the Serilog basic configuration. It may be extended following [the related documentation](https://github.com/serilog/serilog-settings-configuration).
 
+## Limitations
+QV-proxy was initially born as a side-project to practice with the latest .NET functionalities and best practices. However, it turned out to be a valuable tool for tackling some of the common challenges posed by software integrations. Various project-tailored, closed-source versions of this software have been developed and deployed successfully, and are currently used in production scenarios.
+However, if you are planning to use this software or forks of it for your own projects, please consider the following:
+
+- **Performance considerations**: QV-proxy may not offer the same level of performance as more complex, specialized proxy solutions. Users should assess their performance requirements and consider whether QV-proxy meets their needs adequately.
+- **Security considerations**: QV-proxy leverages [DPAPI](https://en.wikipedia.org/wiki/Data_Protection_API) to protect sensitive data. However, depending on your requirements, more secure and tailored solutions for data protection may be a better fit. Moreover, QV-proxy does not provide advanced security features such as rate limiting, access control lists, or content filtering.
+- **Scalability considerations**: while QV-proxy is designed to be lightweight and easy to configure and deploy, it may not scale effectively to large deployments or high-traffic scenarios without additional optimization or infrastructure investments.
+
+
+In short, QV-proxy aims to be lightweight, flexible, and easy to deploy. However it's worth noting that it might not be the ideal choice for every situation.
 
