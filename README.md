@@ -1,17 +1,17 @@
 # quasi-vanilla-proxy
 
-A simple, lightweight .NET proxy that aims to facilitate seamless API integration between applications. It supports listening on multiple protocols and can handle authentication on client's behalf on forwarding, without requiring any modification to the involved applications.
+A simple, lightweight .NET proxy that aims to facilitate seamless API integration between applications, forwarding traffic to an HTTP/S URL and handling authentication and data manipulation without requiring any modification to the involved applications.
 
 Supports running as a console app or as a background service.
  
 ## Use cases
 Integration between business software systems can be challenging, especially when there are multiple vendors or legacy applications involved. APIs of the involved software systems may have strict requirements for what concerns authentication or data formatting, and often changes for these functionalities are either expensive or simply unfeasible.
 
-The quasi-vanilla-proxy can be useful in such scenarios, enabling API integration without requiring additional modifications to involved software.
+The QV-proxy can be useful in such scenarios, helping to enable API integration by handling some of the functionalities required.
 Some example of possible use-cases:
 
-- **Providing authentication**: some APIs or web servers enforce a specific authentication method, which may not be supported by the client application. An example is OAuth2.0: although being an industry standard nowadays, many applications still do not support it and its implementation can be challenging or even unfeasible.
-- **
+- **Providing authentication**: some APIs or web servers enforce a specific authentication method, which may not be supported by the client application. An example is OAuth2.0: although being an industry standard nowadays, many applications still do not support it as its implementation can be challenging.
+- **Enabling HTTP**: some legacy business applications still do not support HTTP (happens way too often!), but may only support transport-level protocols such as TCP or UDP. QV-proxy supports these protocols, receiving the data and then forwarding it to the target URL.
 
 ## Features
 This proxy can be useful, for example, for integrations between a legacy application and a web server or, more in general, between an application and a web server that enforces some kind of authentication requirements which the application cannot natively satisfy. A common example is OAuth2.0: although being an industry standard nowadays, it is still not supported by many legacy applications as its implementation can be challenging.
