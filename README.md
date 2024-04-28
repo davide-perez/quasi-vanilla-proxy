@@ -7,16 +7,14 @@ Supports running as a console app or as a background service.
 ## Use cases
 Integration between business software systems can be challenging, especially when there are multiple vendors or legacy applications involved. APIs of the involved software systems may have strict requirements for what concerns authentication or data formatting, and often changes for these functionalities are either expensive or simply unfeasible.
 
-The qv-proxy can be useful in such scenarios, helping to enable API integration by handling some of the functionalities required.
+QV-proxy can be useful in such scenarios, helping to enable API integration by handling some of the functionalities without requiring additional modifications to the involved software systems.
 Some example of possible use-cases:
 
 - **Providing authentication**: some APIs or web servers enforce a specific authentication method, which may not be supported by the client application. An example is OAuth2.0: although being an industry standard nowadays, many applications still do not support it.
-- **Enabling HTTP**: there are legacy business applications still do not support HTTP (happens often than you believe!), but may only support transport-level protocols such as TCP or UDP. QV-proxy supports these protocols, receiving the data and then forwarding it to the target URL.
-- **Manipulating data**: this involves transforming or reformatting data before forwarding it to its destination. For instance, an API may work only with JSON format, while the client only supports sending data with XML or plain text format.
+- **Manipulating data**: this involves transforming or reformatting data before forwarding it to its destination. For instance, an API may work only with JSON format, while the client only supports sending data with XML or plain text format. Or, another example, an API may require a specific date format, which is not supported by the client app.
+- **Enabling HTTP**: there are legacy business applications still do not support HTTP (happens often than you believe!), but may only support transport-level protocols such as TCP. QV-proxy supports these protocols, receiving the data and then forwarding it to the target URL.
 
 ## Features
-This proxy can be useful, for example, for integrations between a legacy application and a web server or, more in general, between an application and a web server that enforces some kind of authentication requirements which the application cannot natively satisfy. A common example is OAuth2.0: although being an industry standard nowadays, it is still not supported by many legacy applications as its implementation can be challenging.
-
  - **Easy to configure**: can easily be configured via a single configuration file, that automatically encrypts sensible properties
  - **Multi-protocol**: currently supports TCP and HTTP clients
  - **Authentication**: can take care of various authentication methods on behalf of the client. Currently supports **Basic Auth** and **OAuth2.0 with Client Credentials Flow**.
