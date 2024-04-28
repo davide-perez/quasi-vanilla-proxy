@@ -14,7 +14,7 @@ Some example of possible use-cases:
 
 ## Features
  - **Easy to configure**: can easily be configured via a single configuration file
- - **Secure**: sensible properties, such as credentials in the configuration file and the JWT access token, are automatically encrypted using [DPAPI](https://en.wikipedia.org/wiki/Data_Protection_API)
+ - **Secure**: sensible properties, such as credentials in the configuration file and the JWT access token, are automatically encrypted
  - **Multi-protocol**: currently supports TCP and HTTP clients
  - **Authentication**: can take care of various authentication methods on behalf of the client. Currently supports **Basic Auth** and **OAuth2.0 with Client Credentials Flow**.
  - **Extensibility**: aims to be easily customizable and extendible
@@ -134,7 +134,7 @@ Any time those properties are manually changed in the configuration file, they w
 The `Serilog` section contains the Serilog basic configuration. It may be extended following [the related documentation](https://github.com/serilog/serilog-settings-configuration).
 
 ## Limitations
-QV-proxy was initially born as a side-project to practice with the latest .NET functionalities and best practices. However, it turned out to be a valuable tool for tackling some of the common challenges posed by software integrations. Various project-tailored, closed-source versions of this software have been developed and deployed successfully, and are currently used in production scenarios.
+QV-proxy began as a side-project to practice with the latest .NET functionalities and best practices, but turned out to be a valuable tool for tackling some of the common challenges posed by business software integrations. Various tailored, rebranded and closed-source versions of this software have been developed and deployed successfully in production environments.
 However, if you are planning to use this software or forks of it for your own projects, please consider the following:
 
 - **Performance considerations**: QV-proxy may not offer the same level of performance as more complex, specialized proxy solutions. Users should assess their performance requirements and consider whether QV-proxy meets their needs adequately.
@@ -144,3 +144,18 @@ However, if you are planning to use this software or forks of it for your own pr
 
 In short, QV-proxy aims to be lightweight, flexible, and easy to deploy. However it's worth noting that it might not be the ideal choice for every situation.
 
+## Contributing
+Thank you for considering contributing to the Quasi-Vanilla Proxy project! Here's how you can get involved:
+
+- **Code Contributions**: help improve the proxy by fixing bugs or adding new features. Fork the repository, make your changes, and submit a pull request.
+- **Documentation**: improve the project's documentation by clarifying existing information or adding examples. Documentation changes are also submitted via pull requests.
+- **Bug Reporting**: if you encounter any bugs, please report them by opening an issue on GitHub. Provide detailed information about the issue and steps to reproduce it.
+- **Feedback**: share your thoughts, ideas, and suggestions for improving the proxy. Your feedback is valuable and helps shape the future of the project.
+
+### Guidelines:
+Fork the repository and create a new branch for your changes.
+Follow existing code style and formatting conventions.
+Test your changes thoroughly before submitting a pull request.
+Provide clear and descriptive commit messages.
+Be respectful and constructive in all interactions within the project.
+Thank you for contributing to the QV-proxy project! Your efforts help make the proxy better for everyone. If you have any questions, feel free to reach out to the project maintainers. We appreciate your support!
