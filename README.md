@@ -1,6 +1,6 @@
 # Quasi-Vanilla Proxy
 
-A simple, lightweight .NET forwarder proxy that aims to facilitate API integration between applications, forwarding traffic to an HTTP/S URL and handling authentication and payload manipulation on behalf of the client application.
+A simple, lightweight multi-protocol web proxy written in C# that aims to facilitate API integration between applications, forwarding traffic to an HTTP/S URL and handling authentication and payload manipulation on behalf of the client application.
  
 ## Use cases
 Integration between business software systems can be challenging, especially when there are multiple vendors or legacy applications involved. APIs of the involved software systems may have strict requirements for what concerns authentication or data formatting, and often changes for these functionalities are either expensive or simply unfeasible.
