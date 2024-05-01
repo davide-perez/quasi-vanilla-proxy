@@ -182,14 +182,15 @@ namespace DPE.QuasiVanillaProxy.Service
                 Proxy = new
                 {
                     CurrentProtocol = "Http",
-                    CurrentAuthentication = "OAuth2_0",
+                    CurrentAuthentication = "",
                     Protocol = new
                     {
                         Tcp = new
                         {
                             ProxyIPAddress = "127.0.0.1",
                             ProxyPort = "16000",
-                            TargetUrl = "https://example.com/"
+                            TargetUrl = "https://example.com/",
+                            ContentTypeHeader = "text/plain"
                         },
                         Http = new
                         {

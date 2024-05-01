@@ -15,6 +15,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public IPAddress IPAddress { get; set; }
         public int Port { get; set; }
         public Uri? TargetUrl { get; set; }
+        public string FixedContentType { get; set; } = "text/plain";
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
 
@@ -32,6 +33,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             IPAddress = IPAddress.Parse(settings.ProxyIPAddress);
             Port = settings.ProxyPort;
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
+            FixedContentType = settings.ContentTypeHeader ?? "text/plain";
             _httpClient = httpClientFactory.CreateClient();
         }
 
@@ -115,12 +117,17 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    using StreamReader reader = new StreamReader(inputStream, Encoding.UTF8);
-                    string msgToForward = await reader.ReadToEndAsync();
-                    Logger.LogDebug($"Message content: \n\n{msgToForward}\n");
-                    using var content = new StringContent(msgToForward, Encoding.UTF8, "application/json"); // TODO: handle multi-type content (binary, ...)
+                    HttpRequestMessage request = CreateProxyHttpRequest(inputStream);
+
+                    string payloadTxt = "";
+                    if(request.Content != null)
+                    {
+                        payloadTxt = await request.Content.ReadAsStringAsync();
+                    }
+                    Logger.LogDebug($"Message content: \n\n{payloadTxt}\n");
                     Logger.LogDebug("Client for forwarding:\n{@Request}", _httpClient);
-                    HttpResponseMessage response = await _httpClient.PostAsync(TargetUrl, content);
+
+                    HttpResponseMessage response = await _httpClient.SendAsync(request);
 
                     return response;
                 }
@@ -148,6 +155,16 @@ namespace DPE.QuasiVanillaProxy.Tcp
             IsRunning = false;
 
             await Task.CompletedTask;
+        }
+
+
+        private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
+        {
+            var requestMsg = new HttpRequestMessage(HttpMethod.Post, TargetUrl);
+            requestMsg.Content = new StreamContent(contentStream);
+            requestMsg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(FixedContentType);
+
+            return requestMsg;
         }
     }
 }

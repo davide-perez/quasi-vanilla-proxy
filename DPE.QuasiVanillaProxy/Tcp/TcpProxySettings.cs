@@ -7,5 +7,6 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public string? ProxyIPAddress { get; set; }
         public int ProxyPort { get; set; }
         public Uri? TargetUrl { get; set; }
+        public string? ContentTypeHeader { get; set; }
     }
 }
