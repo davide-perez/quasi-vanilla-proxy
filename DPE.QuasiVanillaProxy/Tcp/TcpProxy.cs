@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+﻿using DPE.QuasiVanillaProxy.Core;
 using Microsoft.Extensions.Logging;
-using System.Net.Sockets;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
-using System.Text;
-using DPE.QuasiVanillaProxy.Core;
+using System.Net.Sockets;
 
 namespace DPE.QuasiVanillaProxy.Tcp
 {
@@ -23,7 +22,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public TcpProxy(IHttpClientFactory httpClientFactory, ILogger<IProxy> logger)
         {
             Logger = logger ?? NullLogger<IProxy>.Instance;
-            _httpClient = httpClientFactory.CreateClient();
+            _httpClient = httpClientFactory.CreateClient("proxy");
         }
 
 
@@ -35,6 +34,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
             FixedContentType = settings.ContentTypeHeader ?? "text/plain";
             _httpClient = httpClientFactory.CreateClient();
+            _httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("QuasiVanillaProxy");
         }
 
 
@@ -48,7 +48,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 throw new ArgumentNullException(nameof(IPAddress));
             }
-            if(Port < 1 || Port > 65535)
+            if (Port < 1 || Port > 65535)
             {
                 throw new ArgumentOutOfRangeException(nameof(Port));
             }
@@ -120,7 +120,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
                     HttpRequestMessage request = CreateProxyHttpRequest(inputStream);
 
                     string payloadTxt = "";
-                    if(request.Content != null)
+                    if (request.Content != null)
                     {
                         payloadTxt = await request.Content.ReadAsStringAsync();
                     }
@@ -160,11 +160,11 @@ namespace DPE.QuasiVanillaProxy.Tcp
 
         private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
         {
-            var requestMsg = new HttpRequestMessage(HttpMethod.Post, TargetUrl);
-            requestMsg.Content = new StreamContent(contentStream);
-            requestMsg.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(FixedContentType);
+            var request = new HttpRequestMessage(HttpMethod.Post, TargetUrl);
+            request.Content = new StreamContent(contentStream);
+            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(FixedContentType);
 
-            return requestMsg;
+            return request;
         }
     }
 }

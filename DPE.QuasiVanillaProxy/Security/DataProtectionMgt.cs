@@ -43,7 +43,7 @@ namespace DPE.QuasiVanillaProxy.Security
 
         public static string EncryptSettingValue(string value)
         {
-            if(string.IsNullOrEmpty(value))
+            if (string.IsNullOrEmpty(value))
             {
                 return value;
             }

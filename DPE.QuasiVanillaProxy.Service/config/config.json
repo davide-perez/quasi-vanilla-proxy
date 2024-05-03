@@ -1,6 +1,6 @@
 {
   "Proxy": {
-    "CurrentProtocol": "Http",
+    "CurrentProtocol": "Tcp",
     "CurrentAuthentication": "",
     "Protocol": {
       "Tcp": {

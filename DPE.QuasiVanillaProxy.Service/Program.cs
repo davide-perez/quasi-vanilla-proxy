@@ -1,11 +1,12 @@
-using Serilog;
-using DPE.QuasiVanillaProxy.Http;
-using DPE.QuasiVanillaProxy.Tcp;
-using DPE.QuasiVanillaProxy.Core;
 using DPE.QuasiVanillaProxy.Auth;
+using DPE.QuasiVanillaProxy.Core;
+using DPE.QuasiVanillaProxy.Http;
 using DPE.QuasiVanillaProxy.Security;
+using DPE.QuasiVanillaProxy.Tcp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
+using System.Xml.Linq;
 
 namespace DPE.QuasiVanillaProxy.Service
 {
@@ -70,8 +71,19 @@ namespace DPE.QuasiVanillaProxy.Service
 
         private static void ConfigureServices(HostBuilderContext hostingContext, IServiceCollection services)
         {
-            services.AddHttpClient();
-
+            // we use IHttpClientFactory for flexibility, but have to set the PooledConnectionLifetime to avoid
+            // DNS issues since we will use long-lived http clients
+            // (https://learn.microsoft.com/en-us/dotnet/core/extensions/httpclient-factory#avoid-typed-clients-in-singleton-services)
+            services.AddHttpClient("proxy")
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    return new SocketsHttpHandler()
+                    {
+                        PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+                    };
+                })
+                .SetHandlerLifetime(Timeout.InfiniteTimeSpan); // Disable rotation, as it is handled by PooledConnectionLifetime
+            
             var authType = hostingContext.Configuration.GetValue<string>("Proxy:CurrentAuthentication");
             if (!string.IsNullOrWhiteSpace(authType))
                 authType = authType.ToLower();
@@ -288,7 +300,7 @@ namespace DPE.QuasiVanillaProxy.Service
 
             File.WriteAllText(filePath, config.ToString());
         }
-        
+
         private static void TestDecrypt()
         {
             string filePath = Directory.GetCurrentDirectory() + "\\config\\config.json";
