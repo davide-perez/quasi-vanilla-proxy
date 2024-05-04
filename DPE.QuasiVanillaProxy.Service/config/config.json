@@ -1,6 +1,6 @@
 {
   "Proxy": {
-    "CurrentProtocol": "Tcp",
+    "CurrentProtocol": "Http",
     "CurrentAuthentication": "",
     "Protocol": {
       "Tcp": {
@@ -39,7 +39,7 @@
       {
         "Name": "File",
         "Args": {
-          "path": "logs\\log.log",
+          "path": "C:\\Users\\perez\\Workspace\\Projects\\QuasiVanillaProxy\\DPE.QuasiVanillaProxy.Service\\logs\\log.log",
           "rollingInterval": "Day"
         }
       }

@@ -20,8 +20,4 @@
   <ItemGroup>
     <ProjectReference Include="..\DPE.QuasiVanillaProxy\DPE.QuasiVanillaProxy.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="config\" />
-  </ItemGroup>
 </Project>
