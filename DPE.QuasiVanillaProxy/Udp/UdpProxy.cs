@@ -1,15 +1,15 @@
 ﻿using DPE.QuasiVanillaProxy.Core;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Net;
+using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
+using System.Net;
 
-namespace DPE.QuasiVanillaProxy.Tcp
+namespace DPE.QuasiVanillaProxy.Udp
 {
-    public class TcpProxy : IProxy
+    public class UdpProxy : IProxy
     {
         private readonly HttpClient _httpClient;
-        private TcpListener? _listener;
+        private UdpClient _client;
 
         public IPAddress IPAddress { get; set; }
         public int Port { get; set; }
@@ -19,14 +19,14 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public bool IsRunning { get; private set; }
 
 
-        public TcpProxy(IHttpClientFactory httpClientFactory, ILogger<IProxy> logger)
+        public UdpProxy(IHttpClientFactory httpClientFactory, ILogger<IProxy> logger)
         {
             Logger = logger ?? NullLogger<IProxy>.Instance;
             _httpClient = httpClientFactory.CreateClient("proxy");
         }
 
 
-        public TcpProxy(IHttpClientFactory httpClientFactory, TcpProxySettings settings, ILogger<IProxy> logger)
+        public UdpProxy(IHttpClientFactory httpClientFactory, UdpProxySettings settings, ILogger<IProxy> logger)
         {
             Logger = logger ?? NullLogger<IProxy>.Instance;
             IPAddress = IPAddress.Parse(settings.ProxyIPAddress);
@@ -57,21 +57,19 @@ namespace DPE.QuasiVanillaProxy.Tcp
                 throw new ArgumentException(nameof(TargetUrl));
             }
 
-            Logger.LogInformation($"Starting Tcp proxy on {IPAddress}:{Port} and forwarding to {TargetUrl}");
+            Logger.LogInformation($"Starting Udp proxy on {IPAddress}:{Port} and forwarding to {TargetUrl}");
 
-            _listener = new TcpListener(IPAddress, Port);
-            _listener.Start();
+            _client = new UdpClient(new IPEndPoint(IPAddress, Port));
             IsRunning = true;
 
             try
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    using TcpClient client = await _listener.AcceptTcpClientAsync(stoppingToken);
-                    Logger.LogDebug($"Tcp message incoming");
+                    UdpReceiveResult result = await _client.ReceiveAsync();
+                    Logger.LogDebug($"Connection established");
 
-
-                    using (Stream inputStream = client.GetStream())
+                    using (Stream inputStream = new MemoryStream(result.Buffer))
                     {
                         HttpResponseMessage response = await ForwardAsync(inputStream, stoppingToken);
                         if (response != null)
@@ -94,7 +92,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             }
             catch (OperationCanceledException)
             {
-                Logger.LogDebug("Tcp proxy stopped due to a cancellation request.");
+                Logger.LogDebug("Udp proxy stopped due to a cancellation request.");
             }
             catch (SocketException ex)
             {
@@ -104,7 +102,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 if (IsRunning)
                 {
-                    _listener.Stop();
+                    _client.Dispose();
                     IsRunning = false;
                 }
             }
@@ -151,7 +149,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 throw new InvalidOperationException("Proxy is not running");
             }
-            _listener?.Stop();
+            _client.Dispose();
             IsRunning = false;
 
             await Task.CompletedTask;

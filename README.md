@@ -15,7 +15,7 @@ Some example of possible use-cases:
 ## Features
  - **Easy to configure**: can easily be configured via a single configuration file
  - **Secure**: sensible properties, such as credentials in the configuration file and the JWT access token, are automatically encrypted
- - **Multi-protocol**: currently supports TCP and HTTP clients
+ - **Multi-protocol**: currently supports TCP, UDP and HTTP clients
  - **Authentication**: can take care of various authentication methods on behalf of the client. Currently supports **Basic Auth** and **OAuth2.0 with Client Credentials Flow**.
  - **Extensibility**: aims to be easily customizable and extendible
 
@@ -47,7 +47,14 @@ Any setting of the proxy, such as protocol, authentication and logging setups, c
       "Tcp": {
         "ProxyIPAddress": "127.0.0.1",
         "ProxyPort": "16000",
+        "TargetUrl": "https://example.com/",
+        "ContentTypeHeader": "text/plain"
+      },
+      "Udp": {
+        "ProxyIPAddress": "127.0.0.1",
+        "ProxyPort": "16000",
         "TargetUrl": "https://example.com/"
+        "ContentTypeHeader": "text/plain"
       },
       "Http": {
         "ProxyUrl": "http://localhost:16000",
@@ -90,7 +97,7 @@ Any setting of the proxy, such as protocol, authentication and logging setups, c
 
 The `config.json` file is created at the first start-up (or re-created if it does not exist in the executable folder). 
 
-The `Proxy.CurrentProtocol` property defines if the proxy run as an HTTP proxy or as a TCP proxy. Allowed values are `Tcp` and `Http`. Depending on the value of such property, the properties in the `Proxy.Protocol.Tcp` section or in the `Proxy.Protocol.Http` section will be relevant.
+The `Proxy.CurrentProtocol` property defines if the proxy run as an HTTP proxy, as a TCP proxy or as an UDP proxy. Allowed values are `Tcp`, `Udp` and `Http`. Depending on the value of such property, the properties in the `Proxy.Protocol.Tcp` section, in the `Proxy.Protocol.Udp` section or in the `Proxy.Protocol.Http` section will be relevant.
 
 The `Proxy.CurrentAuthentication` property defines if the proxy will handle authentication on the client's behalf, i.e. creating and adding an auth header on the data prior forwarding it, using the specified authentication method. Allowed values are `Basic` and `OAuth2.0`. Depending on the value of such property, the properties in the `Proxy.Authentucation.Basic` section or in the `Proxy.Authentication.OAuth2_0` section will be relevant.
 

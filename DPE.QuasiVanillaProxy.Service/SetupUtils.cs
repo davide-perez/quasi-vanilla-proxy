@@ -68,6 +68,13 @@ namespace DPE.QuasiVanillaProxy.Service
                             TargetUrl = "https://example.com/",
                             ContentTypeHeader = "text/plain"
                         },
+                        Udp = new
+                        {
+                            ProxyIPAddress = "127.0.0.1",
+                            ProxyPort = "16000",
+                            TargetUrl = "https://example.com/",
+                            ContentTypeHeader = "text/plain"
+                        },
                         Http = new
                         {
                             ProxyUrl = "http://localhost:16000",

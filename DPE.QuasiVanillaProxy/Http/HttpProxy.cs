@@ -28,7 +28,7 @@ namespace DPE.QuasiVanillaProxy.Http
         {
             Url = settings.ProxyUrl ?? throw new ArgumentNullException(nameof(Url));
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
-            _httpClient = httpClientFactory.CreateClient();
+            _httpClient = httpClientFactory.CreateClient("proxy");
             Logger = logger ?? NullLogger<IProxy>.Instance;
         }
 

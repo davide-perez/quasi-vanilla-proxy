@@ -1,11 +1,17 @@
 {
   "Proxy": {
-    "CurrentProtocol": "Http",
+    "CurrentProtocol": "Udp",
     "CurrentAuthentication": "",
     "Protocol": {
       "Tcp": {
         "ProxyIPAddress": "127.0.0.1",
-        "ProxyPort": "16000",
+        "ProxyPort": 16000,
+        "TargetUrl": "https://example.com/",
+        "ContentTypeHeader": "text/plain"
+      },
+      "Udp": {
+        "ProxyIPAddress": "127.0.0.1",
+        "ProxyPort": 16000,
         "TargetUrl": "https://example.com/",
         "ContentTypeHeader": "text/plain"
       },
