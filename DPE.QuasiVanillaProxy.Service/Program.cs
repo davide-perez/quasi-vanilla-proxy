@@ -1,18 +1,19 @@
-using Serilog;
-using DPE.QuasiVanillaProxy.Http;
-using DPE.QuasiVanillaProxy.Tcp;
-using DPE.QuasiVanillaProxy.Core;
 using DPE.QuasiVanillaProxy.Auth;
+using DPE.QuasiVanillaProxy.Core;
+using DPE.QuasiVanillaProxy.Http;
 using DPE.QuasiVanillaProxy.Security;
+using DPE.QuasiVanillaProxy.Tcp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
+using System.Xml.Linq;
 
 namespace DPE.QuasiVanillaProxy.Service
 {
     public class Program
     {
-        static string CONFIG_PATH = "config\\config.json";
-        static string BOOTSTRAP_LOG_PATH = "logs\\log.log";
+        static string CONFIG_FILE_FILENAME = "config\\config.json";
+        static string BOOTSTRAP_LOG_FILENAME = "logs\\log.log";
 
         private static void Main(string[] args)
         {
@@ -20,9 +21,12 @@ namespace DPE.QuasiVanillaProxy.Service
             // instead of %WinDir%\Sys32
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 
-            InitBootstrapLogger();
-            EnsureConfigFileExists();
-            EnsureConfigFileEncrypted();
+            string configFilePath = Path.Combine(Directory.GetCurrentDirectory(), CONFIG_FILE_FILENAME);
+            string bootstrapLogFilePath = Path.Combine(Directory.GetCurrentDirectory(), BOOTSTRAP_LOG_FILENAME);
+
+            SetupUtils.InitBootstrapLogger(BOOTSTRAP_LOG_FILENAME);
+            SetupUtils.EnsureConfigFileExists(configFilePath, bootstrapLogFilePath);
+            SetupUtils.EnsureConfigFileEncrypted(configFilePath);
 
             try
             {
@@ -38,7 +42,7 @@ namespace DPE.QuasiVanillaProxy.Service
             }
             finally
             {
-                DisposeBootstrapLogger();
+                SetupUtils.DisposeBootstrapLogger();
             }
         }
 
@@ -58,7 +62,7 @@ namespace DPE.QuasiVanillaProxy.Service
         private static void ConfigureConfiguration(HostBuilderContext hostingContext, IConfigurationBuilder config)
         {
             config.Sources.Clear();
-            config.AddJsonFile(CONFIG_PATH, optional: false, reloadOnChange: true);
+            config.AddJsonFile(CONFIG_FILE_FILENAME, optional: false, reloadOnChange: true);
         }
 
 
@@ -70,8 +74,19 @@ namespace DPE.QuasiVanillaProxy.Service
 
         private static void ConfigureServices(HostBuilderContext hostingContext, IServiceCollection services)
         {
-            services.AddHttpClient();
-
+            // we use IHttpClientFactory for flexibility, but have to set the PooledConnectionLifetime to avoid
+            // DNS issues since we will use long-lived http clients
+            // (https://learn.microsoft.com/en-us/dotnet/core/extensions/httpclient-factory#avoid-typed-clients-in-singleton-services)
+            services.AddHttpClient("proxy")
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    return new SocketsHttpHandler()
+                    {
+                        PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+                    };
+                })
+                .SetHandlerLifetime(Timeout.InfiniteTimeSpan); // Disable rotation, as it is handled by PooledConnectionLifetime
+            
             var authType = hostingContext.Configuration.GetValue<string>("Proxy:CurrentAuthentication");
             if (!string.IsNullOrWhiteSpace(authType))
                 authType = authType.ToLower();
@@ -145,169 +160,6 @@ namespace DPE.QuasiVanillaProxy.Service
             }
 
             services.AddHostedService<ProxyService>();
-        }
-
-
-        private static void InitBootstrapLogger()
-        {
-            // To log errors during start-up. Will be replaced by the configured logger with the UseSerilog() call
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console().WriteTo
-                .File(path: BOOTSTRAP_LOG_PATH, rollingInterval: RollingInterval.Day)
-                .CreateBootstrapLogger();
-            Log.Information("Bootstrapping hosting...");
-        }
-
-
-        private static void DisposeBootstrapLogger()
-        {
-            Log.CloseAndFlush();
-        }
-
-
-        private static void EnsureConfigFileExists()
-        {
-            Log.Information("Checking for config file");
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), CONFIG_PATH);
-            bool configExists = File.Exists(filePath);
-            if (configExists)
-            {
-                Log.Information("Config file found");
-                return;
-            }
-            Log.Information($"Config file not found at {filePath}. Creating it...");
-
-            var config = new
-            {
-                Proxy = new
-                {
-                    CurrentProtocol = "Http",
-                    CurrentAuthentication = "OAuth2_0",
-                    Protocol = new
-                    {
-                        Tcp = new
-                        {
-                            ProxyIPAddress = "127.0.0.1",
-                            ProxyPort = "16000",
-                            TargetUrl = "https://example.com/"
-                        },
-                        Http = new
-                        {
-                            ProxyUrl = "http://localhost:16000",
-                            TargetUrl = "https://example.com/"
-                        }
-                    },
-                    Authentication = new
-                    {
-                        Basic = new
-                        {
-                            UserName = "",
-                            Password = ""
-                        },
-                        OAuth2_0 = new
-                        {
-                            Authority = "",
-                            ClientId = "",
-                            ClientSecret = "",
-                            Scope = ""
-                        }
-                    }
-                },
-                Serilog = new
-                {
-                    MinimumLevel = "Debug",
-                    Enrich = new[] { "FromLogContext" },
-                    WriteTo = new object[]
-                    {
-                        new
-                        {
-                            Name = "Console"
-                        },
-                        new
-                        {
-                            Name = "File",
-                            Args = new
-                            {
-                                path = BOOTSTRAP_LOG_PATH,
-                                rollingInterval = "Day"
-                            }
-                        }
-                    }
-                }
-            };
-
-            string jsonConfig = JsonConvert.SerializeObject(config, Formatting.Indented);
-            File.WriteAllText(filePath, jsonConfig);
-            Log.Information("Config file created");
-        }
-
-
-        private static void EnsureConfigFileEncrypted()
-        {
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), CONFIG_PATH);
-            string jsonConfig = File.ReadAllText(filePath);
-            if (string.IsNullOrWhiteSpace(jsonConfig))
-            {
-                return;
-            }
-
-            JObject config = JObject.Parse(jsonConfig);
-
-            if (config == null)
-            {
-                return;
-            }
-
-            string clientSecret = config["Proxy"]["Authentication"]["OAuth2_0"]["ClientSecret"].Value<string>();
-            string encClientSecret = "";
-            string password = config["Proxy"]["Authentication"]["Basic"]["Password"].Value<string>();
-            string encPassword = "";
-
-            if (!string.IsNullOrEmpty(clientSecret) && !DataProtectionMgt.IsEncrypted(encClientSecret))
-            {
-                Log.Information("Encrypting client secret...");
-                encClientSecret = DataProtectionMgt.EncryptSettingValue(clientSecret);
-            }
-            else
-            {
-                encClientSecret = clientSecret;
-            }
-            config["Proxy"]["Authentication"]["OAuth2_0"]["ClientSecret"] = encClientSecret;
-
-            if (!string.IsNullOrEmpty(password) && !DataProtectionMgt.IsEncrypted(password))
-            {
-                Log.Information("Encrypting password...");
-                encPassword = DataProtectionMgt.EncryptSettingValue(password);
-            }
-            else
-            {
-                encPassword = password;
-            }
-            config["Proxy"]["Authentication"]["Basic"]["Password"] = encPassword;
-
-            File.WriteAllText(filePath, config.ToString());
-        }
-        
-        private static void TestDecrypt()
-        {
-            string filePath = Directory.GetCurrentDirectory() + "\\config\\config.json";
-            string jsonConfig = File.ReadAllText(filePath);
-            if (string.IsNullOrWhiteSpace(jsonConfig))
-            {
-                return;
-            }
-
-            JObject config = JObject.Parse(jsonConfig);
-
-            if (config == null)
-            {
-                return;
-            }
-
-            string encPassword = config["Proxy"]["Authentication"]["Basic"]["Password"].Value<string>();
-            string password = DataProtectionMgt.DecryptSettingValue(encPassword);
-            config["Proxy"]["Authentication"]["Basic"]["Password"] = password;
-            File.WriteAllText(filePath, config.ToString());
         }
     }
 }

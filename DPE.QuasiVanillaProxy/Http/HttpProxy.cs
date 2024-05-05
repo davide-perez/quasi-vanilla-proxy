@@ -15,11 +15,11 @@ namespace DPE.QuasiVanillaProxy.Http
         public Uri? TargetUrl { get; set; }
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
-        
+
 
         public HttpProxy(IHttpClientFactory httpClientFactory, ILogger<IProxy> logger)
         {
-            _httpClient = httpClientFactory.CreateClient();
+            _httpClient = httpClientFactory.CreateClient("proxy");
             Logger = logger ?? NullLogger<IProxy>.Instance;
         }
 
@@ -35,7 +35,8 @@ namespace DPE.QuasiVanillaProxy.Http
 
         public async Task StartAsync(CancellationToken stoppingToken)
         {
-            if(IsRunning) {
+            if (IsRunning)
+            {
                 throw new InvalidOperationException("Proxy is already running");
             }
             if (Url == null)
@@ -69,7 +70,7 @@ namespace DPE.QuasiVanillaProxy.Http
                             try
                             {
                                 Logger.LogDebug("Response:\n{@Response}", response);
-                                context.Response.StatusCode = (int) response.StatusCode;
+                                context.Response.StatusCode = (int)response.StatusCode;
                                 context.Response.StatusDescription = response.ReasonPhrase ?? "";
                                 context.Response.Headers.Clear();
                                 foreach (var header in response.Headers)

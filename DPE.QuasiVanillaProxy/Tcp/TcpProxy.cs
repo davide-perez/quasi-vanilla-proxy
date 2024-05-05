@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+﻿using DPE.QuasiVanillaProxy.Core;
 using Microsoft.Extensions.Logging;
-using System.Net.Sockets;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
-using System.Text;
-using DPE.QuasiVanillaProxy.Core;
+using System.Net.Sockets;
 
 namespace DPE.QuasiVanillaProxy.Tcp
 {
@@ -15,6 +14,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public IPAddress IPAddress { get; set; }
         public int Port { get; set; }
         public Uri? TargetUrl { get; set; }
+        public string FixedContentType { get; set; } = "text/plain";
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
 
@@ -22,7 +22,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public TcpProxy(IHttpClientFactory httpClientFactory, ILogger<IProxy> logger)
         {
             Logger = logger ?? NullLogger<IProxy>.Instance;
-            _httpClient = httpClientFactory.CreateClient();
+            _httpClient = httpClientFactory.CreateClient("proxy");
         }
 
 
@@ -32,7 +32,9 @@ namespace DPE.QuasiVanillaProxy.Tcp
             IPAddress = IPAddress.Parse(settings.ProxyIPAddress);
             Port = settings.ProxyPort;
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
+            FixedContentType = settings.ContentTypeHeader ?? "text/plain";
             _httpClient = httpClientFactory.CreateClient();
+            _httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("QuasiVanillaProxy");
         }
 
 
@@ -46,7 +48,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 throw new ArgumentNullException(nameof(IPAddress));
             }
-            if(Port < 1 || Port > 65535)
+            if (Port < 1 || Port > 65535)
             {
                 throw new ArgumentOutOfRangeException(nameof(Port));
             }
@@ -115,12 +117,17 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    using StreamReader reader = new StreamReader(inputStream, Encoding.UTF8);
-                    string msgToForward = await reader.ReadToEndAsync();
-                    Logger.LogDebug($"Message content: \n\n{msgToForward}\n");
-                    using var content = new StringContent(msgToForward, Encoding.UTF8, "application/json"); // TODO: handle multi-type content (binary, ...)
+                    HttpRequestMessage request = CreateProxyHttpRequest(inputStream);
+
+                    string payloadTxt = "";
+                    if (request.Content != null)
+                    {
+                        payloadTxt = await request.Content.ReadAsStringAsync();
+                    }
+                    Logger.LogDebug($"Message content: \n\n{payloadTxt}\n");
                     Logger.LogDebug("Client for forwarding:\n{@Request}", _httpClient);
-                    HttpResponseMessage response = await _httpClient.PostAsync(TargetUrl, content);
+
+                    HttpResponseMessage response = await _httpClient.SendAsync(request);
 
                     return response;
                 }
@@ -148,6 +155,16 @@ namespace DPE.QuasiVanillaProxy.Tcp
             IsRunning = false;
 
             await Task.CompletedTask;
+        }
+
+
+        private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, TargetUrl);
+            request.Content = new StreamContent(contentStream);
+            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(FixedContentType);
+
+            return request;
         }
     }
 }

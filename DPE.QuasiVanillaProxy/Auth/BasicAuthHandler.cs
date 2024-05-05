@@ -13,7 +13,7 @@ namespace DPE.QuasiVanillaProxy.Auth
 
         public BasicAuthHandler(BasicAuthSettings? settings)
         {
-            if(settings == null)
+            if (settings == null)
             {
                 throw new ArgumentNullException(nameof(settings));
             }
@@ -24,7 +24,7 @@ namespace DPE.QuasiVanillaProxy.Auth
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(_credentials.UserName + ":" + _credentials.Password)));
-            
+
             return await base.SendAsync(request, cancellationToken);
         }
     }
