@@ -43,10 +43,14 @@ namespace DPE.QuasiVanillaProxy.Core
                 {
                     encoding = Encoding.Default;
                 }
-                var reader = new StreamReader(contentStream);
-                var contentString = reader.ReadToEnd();
-                var encodedContent = encoding.GetBytes(contentString);
-                content = new StreamContent(new MemoryStream(encodedContent));
+                using (var memoryStream = new MemoryStream())
+                {
+                    contentStream.CopyTo(memoryStream);
+                    var contentBytes = memoryStream.ToArray();
+                    var contentString = encoding.GetString(contentBytes);
+                    var encodedContent = encoding.GetBytes(contentString);
+                    content = new StreamContent(new MemoryStream(encodedContent));
+                }
             }
 
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
