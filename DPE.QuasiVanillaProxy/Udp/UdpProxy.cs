@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
 using System.Net;
+using System.Text;
 
 namespace DPE.QuasiVanillaProxy.Udp
 {
@@ -14,6 +15,7 @@ namespace DPE.QuasiVanillaProxy.Udp
         public IPAddress IPAddress { get; set; }
         public int Port { get; set; }
         public Uri? TargetUrl { get; set; }
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
         public string FixedContentType { get; set; } = "text/plain";
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
@@ -158,11 +160,7 @@ namespace DPE.QuasiVanillaProxy.Udp
 
         private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, TargetUrl);
-            request.Content = new StreamContent(contentStream);
-            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(FixedContentType);
-
-            return request;
+            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType);
         }
     }
 }

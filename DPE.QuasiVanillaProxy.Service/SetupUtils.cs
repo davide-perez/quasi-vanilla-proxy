@@ -66,19 +66,22 @@ namespace DPE.QuasiVanillaProxy.Service
                             ProxyIPAddress = "127.0.0.1",
                             ProxyPort = "16000",
                             TargetUrl = "https://example.com/",
-                            ContentTypeHeader = "text/plain"
+                            ContentTypeHeader = "text/plain",
+                            TextEncoding = ""
                         },
                         Udp = new
                         {
                             ProxyIPAddress = "127.0.0.1",
                             ProxyPort = "16000",
                             TargetUrl = "https://example.com/",
-                            ContentTypeHeader = "text/plain"
+                            ContentTypeHeader = "text/plain",
+                            TextEncoding = ""
                         },
                         Http = new
                         {
                             ProxyUrl = "http://localhost:16000",
-                            TargetUrl = "https://example.com/"
+                            TargetUrl = "https://example.com/",
+                            TextEncoding = ""
                         }
                     },
                     Authentication = new
@@ -169,6 +172,19 @@ namespace DPE.QuasiVanillaProxy.Service
             config["Proxy"]["Authentication"]["Basic"]["Password"] = encPassword;
 
             File.WriteAllText(configFilePath, config.ToString());
+        }
+
+
+        public Encoding? GetEncodingFromName(string encodingName)
+        {
+            List<string> supportedEncodings = new List<string>() {"utf-8","unicode","ascii"};
+            if(!supportedEncodings.Contains(encodingName.ToLower()))
+            {
+                throw new ArgumentException($"Unsupported encoding '{encodingName}'");
+            }
+            Encoding encoding = Encoding.GetEncoding(encodingName);
+
+            return encoding;
         }
     }
 }

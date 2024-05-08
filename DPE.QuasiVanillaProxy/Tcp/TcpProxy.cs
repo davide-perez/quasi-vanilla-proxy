@@ -160,11 +160,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
 
         private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, TargetUrl);
-            request.Content = new StreamContent(contentStream);
-            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(FixedContentType);
-
-            return request;
+            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType);
         }
     }
 }

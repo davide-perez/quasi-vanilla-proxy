@@ -1,23 +1,26 @@
 {
   "Proxy": {
-    "CurrentProtocol": "Udp",
+    "CurrentProtocol": "Tcp",
     "CurrentAuthentication": "",
     "Protocol": {
       "Tcp": {
         "ProxyIPAddress": "127.0.0.1",
         "ProxyPort": 16000,
         "TargetUrl": "https://example.com/",
-        "ContentTypeHeader": "text/plain"
+        "ContentTypeHeader": "text/plain",
+        "TextEncoding": "UTF-8"
       },
       "Udp": {
         "ProxyIPAddress": "127.0.0.1",
         "ProxyPort": 16000,
         "TargetUrl": "https://example.com/",
-        "ContentTypeHeader": "text/plain"
+        "ContentTypeHeader": "text/plain",
+        "TextEncoding": "UTF-8"
       },
       "Http": {
         "ProxyUrl": "http://localhost:16000",
-        "TargetUrl": "https://example.com/"
+        "TargetUrl": "https://example.com/",
+        "TextEncoding": "UTF-8"
       }
     },
     "Authentication": {
