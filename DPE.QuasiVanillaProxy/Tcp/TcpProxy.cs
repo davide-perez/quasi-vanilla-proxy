@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace DPE.QuasiVanillaProxy.Tcp
 {
@@ -15,6 +16,8 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public int Port { get; set; }
         public Uri? TargetUrl { get; set; }
         public string FixedContentType { get; set; } = "text/plain";
+        public Encoding? SourceEncoding;
+        public Encoding? TargetEncoding;
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
 
@@ -160,7 +163,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
 
         private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
         {
-            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType);
+            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType, Encoding.ASCII, Encoding.UTF8);
         }
     }
 }

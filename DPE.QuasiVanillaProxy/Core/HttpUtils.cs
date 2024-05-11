@@ -9,7 +9,7 @@ namespace DPE.QuasiVanillaProxy.Core
 {
     public class HttpUtils
     {
-        public static HttpRequestMessage CreateHttpRequest(Uri targetUri, HttpMethod httpMethod, Stream contentStream, string mediaType, Encoding? encoding = null)
+        public static HttpRequestMessage CreateHttpRequest(Uri targetUri, HttpMethod httpMethod, Stream contentStream, string mediaType, Encoding? sourceEncoding = null, Encoding? targetEncoding = null)
         {
             if (targetUri == null)
             {
@@ -26,14 +26,14 @@ namespace DPE.QuasiVanillaProxy.Core
                 {
                     throw new ArgumentNullException("mediaType");
                 }
-                var content = CreateHttpContent(contentStream, mediaType, encoding);
+                var content = CreateHttpContent(contentStream, mediaType, sourceEncoding, targetEncoding);
                 request.Content = content;
             }
 
             return request;
         }
 
-        public static HttpContent CreateHttpContent(Stream contentStream, string mediaType, Encoding sourceEncoding, Encoding targetEncoding)
+        public static HttpContent CreateHttpContent(Stream contentStream, string mediaType, Encoding? sourceEncoding, Encoding? targetEncoding)
         {
             HttpContent content;
 

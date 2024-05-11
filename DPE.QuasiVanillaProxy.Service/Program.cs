@@ -139,7 +139,8 @@ namespace DPE.QuasiVanillaProxy.Service
                     services.AddSingleton<TcpProxySettings>(sp =>
                     {
                         TcpProxySettings tcpSettings = new();
-                        hostingContext.Configuration.GetSection(key: "Proxy:Protocol:Tcp").Bind(tcpSettings);
+                        hostingContext.Configuration.GetSection(key: "Proxy:Source:Tcp").Bind(tcpSettings);
+                        hostingContext.Configuration.GetSection(key: "Proxy:Target").Bind(tcpSettings);
                         return tcpSettings;
                     });
                     services.AddSingleton<IProxy, TcpProxy>();
@@ -149,7 +150,7 @@ namespace DPE.QuasiVanillaProxy.Service
                     services.AddSingleton<UdpProxySettings>(sp =>
                     {
                         UdpProxySettings udpSettings = new();
-                        hostingContext.Configuration.GetSection(key: "Proxy:Protocol:Udp").Bind(udpSettings);
+                        hostingContext.Configuration.GetSection(key: "Proxy:Source:Udp").Bind(udpSettings);
                         return udpSettings;
                     });
                     services.AddSingleton<IProxy, UdpProxy>();
@@ -159,7 +160,7 @@ namespace DPE.QuasiVanillaProxy.Service
                     services.AddSingleton<HttpProxySettings>(sp =>
                     {
                         HttpProxySettings httpSettings = new();
-                        hostingContext.Configuration.GetSection(key: "Proxy:Protocol:Http").Bind(httpSettings);
+                        hostingContext.Configuration.GetSection(key: "Proxy:Source:Http").Bind(httpSettings);
                         return httpSettings;
                     });
                     services.AddSingleton<IProxy, HttpProxy>();
