@@ -33,27 +33,27 @@ namespace DPE.QuasiVanillaProxy.Core
             return request;
         }
 
-        public static HttpContent CreateHttpContent(Stream contentStream, string mediaType, Encoding? encoding = null)
+        public static HttpContent CreateHttpContent(Stream contentStream, string mediaType, Encoding sourceEncoding, Encoding targetEncoding)
         {
-            var content = new StreamContent(contentStream);
+            HttpContent content;
 
-            if (IsTextualMediaType(mediaType))
+            if (IsTextualMediaType(mediaType) && sourceEncoding != null && targetEncoding != null && (!ReferenceEquals(sourceEncoding, targetEncoding)))
             {
-                if (encoding == null)
+                using (var reader = new StreamReader(contentStream, sourceEncoding))
                 {
-                    encoding = Encoding.Default;
+                    var contentString = reader.ReadToEnd();
+                    var sourceBytes = sourceEncoding.GetBytes(contentString);
+                    var targetBytes = Encoding.Convert(sourceEncoding, targetEncoding, sourceBytes);
+                    content = new ByteArrayContent(targetBytes);
                 }
-                using (var memoryStream = new MemoryStream())
-                {
-                    contentStream.CopyTo(memoryStream);
-                    var contentBytes = memoryStream.ToArray();
-                    var contentString = encoding.GetString(contentBytes);
-                    var encodedContent = encoding.GetBytes(contentString);
-                    content = new StreamContent(new MemoryStream(encodedContent));
-                }
+            }
+            else
+            {
+                content = new StreamContent(contentStream);
             }
 
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
+
             return content;
         }
 
