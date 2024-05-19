@@ -71,9 +71,10 @@ namespace DPE.QuasiVanillaProxy.Udp
                     UdpReceiveResult result = await _client.ReceiveAsync();
                     Logger.LogDebug($"Connection established");
 
-                    using (Stream inputStream = new MemoryStream(result.Buffer))
+                    using (MemoryStream buffer = new MemoryStream(result.Buffer))
                     {
-                        HttpResponseMessage response = await ForwardAsync(inputStream, stoppingToken);
+                        byte[] payload = buffer.ToArray();
+                        HttpResponseMessage response = await ForwardAsync(payload, stoppingToken);
                         if (response != null)
                         {
                             try
@@ -111,13 +112,13 @@ namespace DPE.QuasiVanillaProxy.Udp
         }
 
 
-        public async Task<HttpResponseMessage> ForwardAsync(Stream inputStream, CancellationToken stoppingToken)
+        public async Task<HttpResponseMessage> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
             try
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    HttpRequestMessage request = CreateProxyHttpRequest(inputStream);
+                    HttpRequestMessage request = CreateProxyHttpRequest(payload);
 
                     string payloadTxt = "";
                     if (request.Content != null)
@@ -158,9 +159,10 @@ namespace DPE.QuasiVanillaProxy.Udp
         }
 
 
-        private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
+        private HttpRequestMessage CreateProxyHttpRequest(byte[] payload)
         {
-            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType);
+            return null;
+            // return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType);
         }
     }
 }

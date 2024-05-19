@@ -1,6 +1,7 @@
 ﻿using DPE.QuasiVanillaProxy.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -18,6 +19,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public string FixedContentType { get; set; } = "text/plain";
         public Encoding? SourceEncoding;
         public Encoding? TargetEncoding;
+        public int BufferSize { get; set; } = 1024;
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
 
@@ -36,6 +38,9 @@ namespace DPE.QuasiVanillaProxy.Tcp
             Port = settings.ProxyPort;
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
             FixedContentType = settings.ContentTypeHeader ?? "text/plain";
+            SourceEncoding = settings.SourceEncoding;
+            TargetEncoding = settings.TargetEncoding;
+            BufferSize = settings.StreamBufferSize;
             _httpClient = httpClientFactory.CreateClient("proxy");
             _httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("QuasiVanillaProxy");
         }
@@ -71,25 +76,30 @@ namespace DPE.QuasiVanillaProxy.Tcp
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     using TcpClient client = await _listener.AcceptTcpClientAsync(stoppingToken);
-                    Logger.LogDebug($"Tcp message incoming");
+                    Logger.LogDebug($"Connection established with client {client.Client.RemoteEndPoint}");
 
-
-                    using (Stream inputStream = client.GetStream())
+                    while (client.Connected)
                     {
-                        HttpResponseMessage response = await ForwardAsync(inputStream, stoppingToken);
-                        if (response != null)
+                        using NetworkStream clientStream = client.GetStream();
+                        byte[] readBuffer = new byte[BufferSize];
+                        int noOfBytesRead = await clientStream.ReadAsync(readBuffer, 0, readBuffer.Length);
+                        if(noOfBytesRead > 0)
                         {
-                            try
+                            HttpResponseMessage response = await ForwardAsync(readBuffer, stoppingToken);
+                            if (response != null)
                             {
-                                Logger.LogDebug("Response:\n{@Response}", response);
-                                if (response.IsSuccessStatusCode)
-                                    Logger.LogInformation($"Forwarding completed");
-                                else
-                                    Logger.LogError($"An error occured while forwarding: {response.StatusCode} {response.ReasonPhrase}");
-                            }
-                            finally
-                            {
-                                response.Dispose();
+                                try
+                                {
+                                    Logger.LogDebug("Response:\n{@Response}", response);
+                                    if (response.IsSuccessStatusCode)
+                                        Logger.LogInformation($"Forwarding completed");
+                                    else
+                                        Logger.LogError($"An error occured while forwarding: {response.StatusCode} {response.ReasonPhrase}");
+                                }
+                                finally
+                                {
+                                    response.Dispose();
+                                }
                             }
                         }
                     }
@@ -114,25 +124,17 @@ namespace DPE.QuasiVanillaProxy.Tcp
         }
 
 
-        public async Task<HttpResponseMessage> ForwardAsync(Stream inputStream, CancellationToken stoppingToken)
+        public async Task<HttpResponseMessage> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
+            HttpRequestMessage request = null;
+            HttpResponseMessage response = null;
+
             try
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    HttpRequestMessage request = CreateProxyHttpRequest(inputStream);
-
-                    string payloadTxt = "";
-                    if (request.Content != null)
-                    {
-                        payloadTxt = await request.Content.ReadAsStringAsync();
-                    }
-                    Logger.LogDebug($"Message content: \n\n{payloadTxt}\n");
-                    Logger.LogDebug("Client for forwarding:\n{@Request}", _httpClient);
-
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
-
-                    return response;
+                    request = CreateProxyHttpRequest(payload);
+                    response = await _httpClient.SendAsync(request);
                 }
             }
             catch (HttpRequestException ex)
@@ -144,7 +146,7 @@ namespace DPE.QuasiVanillaProxy.Tcp
                 Logger.LogDebug("Forwarding canceled due to a cancellation request");
             }
 
-            return null;
+            return response;
         }
 
 
@@ -161,9 +163,9 @@ namespace DPE.QuasiVanillaProxy.Tcp
         }
 
 
-        private HttpRequestMessage CreateProxyHttpRequest(Stream contentStream)
+        private HttpRequestMessage CreateProxyHttpRequest(byte[] data)
         {
-            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType, Encoding.ASCII, Encoding.UTF8);
+            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, data, FixedContentType, Encoding.ASCII, Encoding.UTF8);
         }
     }
 }

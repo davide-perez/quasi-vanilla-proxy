@@ -64,7 +64,13 @@ namespace DPE.QuasiVanillaProxy.Http
 
                     using (Stream inputStream = context.Request.InputStream)
                     {
-                        HttpResponseMessage response = await ForwardAsync(inputStream, stoppingToken);
+                        byte[] payload;
+                        using (MemoryStream memoryStream = new MemoryStream())
+                        {
+                            await inputStream.CopyToAsync(memoryStream);
+                            payload = memoryStream.ToArray();
+                        }
+                        HttpResponseMessage response = await ForwardAsync(payload, stoppingToken);
                         if (response != null)
                         {
                             try
@@ -114,14 +120,13 @@ namespace DPE.QuasiVanillaProxy.Http
         }
 
 
-        public async Task<HttpResponseMessage> ForwardAsync(Stream inputStream, CancellationToken stoppingToken)
+        public async Task<HttpResponseMessage> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
             try
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    using StreamReader reader = new StreamReader(inputStream, Encoding.UTF8);
-                    string msgToForward = await reader.ReadToEndAsync();
+                    string msgToForward = Encoding.UTF8.GetString(payload);
                     Logger.LogDebug($"Message content: \n\n{msgToForward}\n");
                     using var content = new StringContent(msgToForward, Encoding.UTF8, "application/json"); // TODO: handle multi-type content (binary, ...)
                     Logger.LogDebug("Client for forwarding:\n{@Request}", _httpClient);
