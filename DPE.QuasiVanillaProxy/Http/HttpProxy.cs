@@ -120,7 +120,7 @@ namespace DPE.QuasiVanillaProxy.Http
         }
 
 
-        public async Task<HttpResponseMessage> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
+        public async Task<HttpResponseMessage?> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
             try
             {

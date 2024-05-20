@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,7 +11,7 @@ namespace DPE.QuasiVanillaProxy.Core
 {
     public class HttpUtils
     {
-        public static HttpRequestMessage CreateHttpRequest(Uri targetUri, HttpMethod httpMethod, byte[] contentData, string mediaType, Encoding? sourceEncoding = null, Encoding? targetEncoding = null)
+        public static HttpRequestMessage CreateHttpRequest(Uri? targetUri, HttpMethod httpMethod, byte[] contentData, string mediaType, Encoding? sourceEncoding = null, Encoding? targetEncoding = null, ILogger logger = null)
         {
             if (targetUri == null)
             {
@@ -19,6 +21,14 @@ namespace DPE.QuasiVanillaProxy.Core
             {
                 throw new ArgumentNullException("httpMethod");
             }
+            if (sourceEncoding == null)
+            {
+                throw new ArgumentNullException("sourceEncoding");
+            }
+            if(logger == null)
+            {
+                logger = NullLogger.Instance;
+            }
             var request = new HttpRequestMessage(httpMethod, targetUri);
             if (contentData != null && MustHaveRequestBody(httpMethod))
             {
@@ -26,28 +36,61 @@ namespace DPE.QuasiVanillaProxy.Core
                 {
                     throw new ArgumentNullException("mediaType");
                 }
-                var content = CreateHttpContent(contentData, mediaType, sourceEncoding, targetEncoding);
+                var content = CreateHttpContent(contentData, mediaType, sourceEncoding, targetEncoding, logger);
                 request.Content = content;
             }
 
             return request;
         }
-
-        public static HttpContent CreateHttpContent(byte[] contentData, string mediaType, Encoding? sourceEncoding, Encoding? targetEncoding)
+        
+        public static HttpContent CreateHttpContent(byte[] contentData, string mediaType, Encoding sourceEncoding, Encoding? targetEncoding, ILogger logger = null)
         {
+            if (contentData == null)
+            {
+                throw new ArgumentNullException(nameof(contentData));
+            }
+            if (mediaType == null)
+            {
+                throw new ArgumentNullException(nameof(mediaType));
+            }
+            if (sourceEncoding == null)
+            {
+                throw new ArgumentNullException(nameof(sourceEncoding));
+            }
+            if(logger == null)
+            {
+                logger = NullLogger.Instance;
+            }
+
+            bool isTextualContent = IsTextualMediaType(mediaType);
             HttpContent content;
 
-            if (IsTextualMediaType(mediaType) && sourceEncoding != null && targetEncoding != null && (!ReferenceEquals(sourceEncoding, targetEncoding)))
+            if (isTextualContent)
             {
-                byte[] sourceBytes = new byte[contentData.Length];
-                contentData.CopyTo(sourceBytes, 0);
-                byte[] targetBytes = Encoding.Convert(sourceEncoding, targetEncoding, sourceBytes);
-                content = new ByteArrayContent(targetBytes);
+                string contentString;
+                if (targetEncoding != null && sourceEncoding != targetEncoding)
+                {
+                    byte[] targetBytes = Encoding.Convert(sourceEncoding, targetEncoding, contentData);
+                    contentString = targetEncoding.GetString(targetBytes);
+                    content = new StringContent(contentString, targetEncoding);
+
+                    logger.LogDebug($"Textual content with encoding conversion {sourceEncoding.EncodingName} -> {targetEncoding.EncodingName}:\n{contentString}");  
+                }
+                else
+                {
+                    contentString = sourceEncoding.GetString(contentData);
+                    content = new StringContent(contentString, sourceEncoding);
+
+                    logger.LogDebug($"Textual content:\n{contentString}");
+                }
             }
             else
             {
                 content = new ByteArrayContent(contentData);
+
+                logger.LogDebug("<binary data>");
             }
+
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
 
             return content;
@@ -77,57 +120,4 @@ namespace DPE.QuasiVanillaProxy.Core
                    !ReferenceEquals(method, HttpMethod.Options) && !ReferenceEquals(method, HttpMethod.Delete);
         }
     }
-
-    /*
-     * 
-     * public async Task<HttpResponseMessage?> ForwardAsync(Stream inputStream, CancellationToken stoppingToken)
-{
-    try
-    {
-        if (!stoppingToken.IsCancellationRequested)
-        {
-            HttpRequestMessage request = CreateProxyHttpRequest(inputStream);
-
-            // Check if the request is null
-            if (request == null)
-            {
-                // Log or handle the null request
-                return null;
-            }
-
-            using (MemoryStream requestStream = new MemoryStream())
-            {
-                // Copy the input stream to the request stream
-                await inputStream.CopyToAsync(requestStream, stoppingToken);
-                
-                // Set the position to the beginning of the request stream
-                requestStream.Seek(0, SeekOrigin.Begin);
-
-                // Set the request content to the request stream
-                request.Content = new StreamContent(requestStream);
-
-                // Log or process the received data
-                Logger.LogDebug($"Received data from client and forwarding...");
-
-                // Forward the request asynchronously
-                HttpResponseMessage response = await _httpClient.SendAsync(request, stoppingToken);
-
-                // Return the response
-                return response;
-            }
-        }
-    }
-    catch (HttpRequestException ex)
-    {
-        // Log or handle the HttpRequestException
-    }
-    catch (OperationCanceledException)
-    {
-        Logger.LogDebug("Forwarding canceled due to a cancellation request");
-    }
-
-    return null;
-}
-
-     * */
 }

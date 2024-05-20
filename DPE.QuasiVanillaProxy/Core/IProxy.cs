@@ -6,6 +6,6 @@
 
         public Task StartAsync(CancellationToken cancellationToken);
         public Task StopAsync(CancellationToken cancellationToken);
-        public Task<HttpResponseMessage> ForwardAsync(byte[] payload, CancellationToken cancellationToken);
+        public Task<HttpResponseMessage?> ForwardAsync(byte[] payload, CancellationToken cancellationToken);
     }
 }

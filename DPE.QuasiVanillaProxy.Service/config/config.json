@@ -6,9 +6,9 @@
       "Tcp": {
         "ProxyIPAddress": "127.0.0.1",
         "ProxyPort": 16000,
-        "StreamBufferSize": 16,
+        "StreamBufferSize": 1024,
         "ContentTypeHeader": "text/plain",
-        "SourceTextEncoding": ""
+        "SourceTextEncoding": "UTF-8"
       },
       "Udp": {
         "ProxyIPAddress": "127.0.0.1",
@@ -23,7 +23,7 @@
     },
     "Target": {
       "TargetUrl": "https://example.com/",
-      "TargetTextEncoding": ""
+      "TargetTextEncoding": "UTF-8"
     },
     "Authentication": {
       "Basic": {

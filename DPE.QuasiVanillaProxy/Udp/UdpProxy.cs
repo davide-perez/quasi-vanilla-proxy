@@ -112,7 +112,7 @@ namespace DPE.QuasiVanillaProxy.Udp
         }
 
 
-        public async Task<HttpResponseMessage> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
+        public async Task<HttpResponseMessage?> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
             try
             {
