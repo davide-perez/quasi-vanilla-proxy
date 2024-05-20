@@ -57,32 +57,35 @@ namespace DPE.QuasiVanillaProxy.Service
             {
                 Proxy = new
                 {
-                    CurrentProtocol = "Http",
+                    CurrentProtocol = "Tcp",
                     CurrentAuthentication = "",
-                    Protocol = new
+                    Source = new
                     {
                         Tcp = new
                         {
                             ProxyIPAddress = "127.0.0.1",
-                            ProxyPort = "16000",
-                            TargetUrl = "https://example.com/",
+                            ProxyPort = 16000,
+                            StreamBufferSize = 1024,
                             ContentTypeHeader = "text/plain",
-                            TextEncoding = ""
+                            SourceTextEncoding = "UTF-8"
                         },
                         Udp = new
                         {
                             ProxyIPAddress = "127.0.0.1",
-                            ProxyPort = "16000",
-                            TargetUrl = "https://example.com/",
+                            ProxyPort = 16000,
                             ContentTypeHeader = "text/plain",
-                            TextEncoding = ""
+                            SourceTextEncoding = ""
                         },
                         Http = new
                         {
                             ProxyUrl = "http://localhost:16000",
-                            TargetUrl = "https://example.com/",
-                            TextEncoding = ""
+                            SourceTextEncoding = ""
                         }
+                    },
+                    Target = new
+                    {
+                        TargetUrl = "https://example.com/",
+                        TargetTextEncoding = "UTF-8"
                     },
                     Authentication = new
                     {

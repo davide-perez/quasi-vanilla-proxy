@@ -6,7 +6,7 @@
       "Tcp": {
         "ProxyIPAddress": "127.0.0.1",
         "ProxyPort": 16000,
-        "StreamBufferSize": 1024,
+        "StreamBufferSize": 8,
         "ContentTypeHeader": "text/plain",
         "SourceTextEncoding": "UTF-8"
       },
