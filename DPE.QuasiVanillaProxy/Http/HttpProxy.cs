@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace DPE.QuasiVanillaProxy.Http
@@ -10,9 +11,13 @@ namespace DPE.QuasiVanillaProxy.Http
     {
         private readonly HttpClient _httpClient;
         private HttpListener? _listener;
+        HttpListenerContext _context;
+
 
         public Uri? Url { get; set; }
         public Uri? TargetUrl { get; set; }
+        public Encoding? SourceEncoding;
+        public Encoding? TargetEncoding;
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
 
@@ -28,6 +33,8 @@ namespace DPE.QuasiVanillaProxy.Http
         {
             Url = settings.ProxyUrl ?? throw new ArgumentNullException(nameof(Url));
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
+            SourceEncoding = settings.SourceEncoding;
+            TargetEncoding = settings.TargetEncoding;
             _httpClient = httpClientFactory.CreateClient("proxy");
             Logger = logger ?? NullLogger<IProxy>.Instance;
         }
@@ -59,50 +66,10 @@ namespace DPE.QuasiVanillaProxy.Http
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    HttpListenerContext context = await _listener.GetContextAsync();
+                    _context = await _listener.GetContextAsync();
                     Logger.LogDebug($"Http message incoming");
 
-                    using (Stream inputStream = context.Request.InputStream)
-                    {
-                        byte[] payload;
-                        using (MemoryStream memoryStream = new MemoryStream())
-                        {
-                            await inputStream.CopyToAsync(memoryStream);
-                            payload = memoryStream.ToArray();
-                        }
-                        HttpResponseMessage response = await ForwardAsync(payload, stoppingToken);
-                        if (response != null)
-                        {
-                            try
-                            {
-                                Logger.LogDebug("Response:\n{@Response}", response);
-                                context.Response.StatusCode = (int)response.StatusCode;
-                                context.Response.StatusDescription = response.ReasonPhrase ?? "";
-                                context.Response.Headers.Clear();
-                                foreach (var header in response.Headers)
-                                {
-                                    context.Response.Headers[header.Key] = string.Join(", ", header.Value);
-                                }
-                                foreach (var header in response.Content.Headers)
-                                {
-                                    if (header.Key.ToLower() != "content-length")
-                                    {
-                                        context.Response.Headers[header.Key] = string.Join(", ", header.Value);
-                                    }
-                                }
-                                await response.Content.CopyToAsync(context.Response.OutputStream);
-                                if (response.IsSuccessStatusCode)
-                                    Logger.LogInformation($"Forwarding completed");
-                                else
-                                    Logger.LogError($"An error occured while forwarding: {context.Response.StatusCode} {context.Response.StatusDescription}");
-                            }
-                            finally
-                            {
-                                response.Dispose();
-                            }
-                        }
-                    }
-                    context.Response.Close();
+                    _ = HandleClientAsync(_context, stoppingToken);
                 }
             }
             catch (OperationCanceledException)
@@ -122,17 +89,17 @@ namespace DPE.QuasiVanillaProxy.Http
 
         public async Task<HttpResponseMessage?> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
+            HttpRequestMessage request = null;
+            HttpResponseMessage response = null;
+
             try
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    string msgToForward = Encoding.UTF8.GetString(payload);
-                    Logger.LogDebug($"Message content: \n\n{msgToForward}\n");
-                    using var content = new StringContent(msgToForward, Encoding.UTF8, "application/json"); // TODO: handle multi-type content (binary, ...)
-                    Logger.LogDebug("Client for forwarding:\n{@Request}", _httpClient);
-                    HttpResponseMessage response = await _httpClient.PostAsync(TargetUrl, content);
-
-                    return response;
+                    request = CreateProxyHttpRequest(payload);
+                    Logger.LogDebug("Request:\n{@Request}", request);
+                    response = await _httpClient.SendAsync(request);
+                    Logger.LogDebug("Response:\n{@Response}", response);
                 }
             }
             catch (HttpRequestException ex)
@@ -144,7 +111,7 @@ namespace DPE.QuasiVanillaProxy.Http
                 Logger.LogDebug("Forwarding canceled due to a cancellation request");
             }
 
-            return null;
+            return response;
         }
 
 
@@ -158,6 +125,85 @@ namespace DPE.QuasiVanillaProxy.Http
             IsRunning = false;
 
             await Task.CompletedTask;
+        }
+
+
+        private async Task HandleClientAsync(HttpListenerContext context, CancellationToken stoppingToken)
+        {
+            HttpListenerRequest listenerRequest = context.Request;
+            byte[] payload;
+
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                await listenerRequest.InputStream.CopyToAsync(memoryStream);
+                payload = memoryStream.ToArray();
+            }
+
+            HttpResponseMessage? response = await ForwardAsync(payload, stoppingToken);
+            _ = SendResponseAsync(_context.Response, response);
+        }
+
+
+        private async Task SendResponseAsync(HttpListenerResponse listenerResponse, HttpResponseMessage response)
+        {
+            Logger.LogDebug($"Sending response to client");
+
+            if (listenerResponse == null)
+            {
+                throw new ArgumentNullException(nameof(listenerResponse));
+            }
+            if (response == null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
+            try
+            {
+                _context.Response.StatusCode = (int)response.StatusCode;
+                _context.Response.StatusDescription = response.ReasonPhrase ?? "";
+                _context.Response.Headers.Clear();
+                foreach (var header in response.Headers)
+                {
+                    _context.Response.Headers[header.Key] = string.Join(", ", header.Value);
+                }
+                foreach (var header in response.Content.Headers)
+                {
+                    if (header.Key.ToLower() != "content-length")
+                    {
+                        _context.Response.Headers[header.Key] = string.Join(", ", header.Value);
+                    }
+                }
+                await response.Content.CopyToAsync(_context.Response.OutputStream);
+                Logger.LogDebug("Proxied response:\n{@ProxiedResponse}", _context.Response);
+                listenerResponse.Close();
+
+                Logger.LogInformation("Response sent to client.");
+            }
+            finally
+            {
+                response.Dispose();
+            }
+        }
+
+
+        private HttpRequestMessage CreateProxyHttpRequest(byte[] data)
+        {
+            if(_context == null)
+            {
+                throw new ArgumentNullException(nameof(_context));
+            }
+            HttpListenerRequest requestToProxy = _context.Request;
+            if(requestToProxy == null)
+            {
+                throw new ArgumentNullException(nameof(requestToProxy));
+            }
+            HttpMethod method = new HttpMethod(requestToProxy.HttpMethod);
+            string mediaType = "";
+            if(requestToProxy.ContentType != null)
+            {
+                mediaType = requestToProxy.ContentType;
+            }
+
+            return HttpUtils.CreateHttpRequest(TargetUrl, method, data, mediaType, SourceEncoding, TargetEncoding, Logger);
         }
     }
 }

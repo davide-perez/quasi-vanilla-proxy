@@ -1,6 +1,6 @@
 {
   "Proxy": {
-    "CurrentProtocol": "Tcp",
+    "CurrentProtocol": "Http",
     "CurrentAuthentication": "",
     "Source": {
       "Tcp": {
@@ -18,7 +18,7 @@
       },
       "Http": {
         "ProxyUrl": "http://localhost:16000",
-        "SourceTextEncoding": ""
+        "SourceTextEncoding": "UTF-8"
       }
     },
     "Target": {

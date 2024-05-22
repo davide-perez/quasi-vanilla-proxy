@@ -7,6 +7,7 @@ using DPE.QuasiVanillaProxy.Udp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using System.Runtime;
 using System.Xml.Linq;
 
 namespace DPE.QuasiVanillaProxy.Service
@@ -151,6 +152,7 @@ namespace DPE.QuasiVanillaProxy.Service
                     {
                         UdpProxySettings udpSettings = new();
                         hostingContext.Configuration.GetSection(key: "Proxy:Source:Udp").Bind(udpSettings);
+                        hostingContext.Configuration.GetSection(key: "Proxy:Target").Bind(udpSettings);
                         return udpSettings;
                     });
                     services.AddSingleton<IProxy, UdpProxy>();
@@ -161,6 +163,7 @@ namespace DPE.QuasiVanillaProxy.Service
                     {
                         HttpProxySettings httpSettings = new();
                         hostingContext.Configuration.GetSection(key: "Proxy:Source:Http").Bind(httpSettings);
+                        hostingContext.Configuration.GetSection(key: "Proxy:Target").Bind(httpSettings);
                         return httpSettings;
                     });
                     services.AddSingleton<IProxy, HttpProxy>();

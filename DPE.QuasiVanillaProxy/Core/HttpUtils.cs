@@ -25,7 +25,7 @@ namespace DPE.QuasiVanillaProxy.Core
             {
                 throw new ArgumentNullException("sourceEncoding");
             }
-            if(logger == null)
+            if (logger == null)
             {
                 logger = NullLogger.Instance;
             }
@@ -42,7 +42,7 @@ namespace DPE.QuasiVanillaProxy.Core
 
             return request;
         }
-        
+
         public static HttpContent CreateHttpContent(byte[] contentData, string mediaType, Encoding sourceEncoding, Encoding? targetEncoding, ILogger logger = null)
         {
             if (contentData == null)
@@ -57,7 +57,7 @@ namespace DPE.QuasiVanillaProxy.Core
             {
                 throw new ArgumentNullException(nameof(sourceEncoding));
             }
-            if(logger == null)
+            if (logger == null)
             {
                 logger = NullLogger.Instance;
             }
@@ -74,7 +74,7 @@ namespace DPE.QuasiVanillaProxy.Core
                     contentString = targetEncoding.GetString(targetBytes);
                     content = new StringContent(contentString, targetEncoding);
 
-                    logger.LogDebug($"Textual content with encoding conversion {sourceEncoding.EncodingName} -> {targetEncoding.EncodingName}:\n{contentString}");  
+                    logger.LogDebug($"Textual content with encoding conversion {sourceEncoding.EncodingName} -> {targetEncoding.EncodingName}:\n{contentString}");
                 }
                 else
                 {
@@ -116,8 +116,11 @@ namespace DPE.QuasiVanillaProxy.Core
 
         public static bool MustHaveRequestBody(HttpMethod method)
         {
-            return !ReferenceEquals(method, HttpMethod.Get) && !ReferenceEquals(method, HttpMethod.Head) &&
-                   !ReferenceEquals(method, HttpMethod.Options) && !ReferenceEquals(method, HttpMethod.Delete);
+            // POST, PUT, PATCH usually require a request body.
+            // DELETE and OPTIONS can have a request body, but it is not required.
+            return ReferenceEquals(method, HttpMethod.Post) ||
+                   ReferenceEquals(method, HttpMethod.Put) ||
+                   ReferenceEquals(method, HttpMethod.Patch);
         }
     }
 }

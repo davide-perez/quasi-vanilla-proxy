@@ -18,8 +18,8 @@ namespace DPE.QuasiVanillaProxy.Tcp
         public int Port { get; set; }
         public Uri? TargetUrl { get; set; }
         public string FixedContentType { get; set; } = "text/plain";
-        public Encoding? SourceEncoding;
-        public Encoding? TargetEncoding;
+        public Encoding? SourceEncoding { get; set; }
+        public Encoding? TargetEncoding { get; set; }
         public int BufferSize { get; set; } = 1024;
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
@@ -79,7 +79,6 @@ namespace DPE.QuasiVanillaProxy.Tcp
                     TcpClient client = await _listener.AcceptTcpClientAsync(stoppingToken);
                     Logger.LogInformation($"Client {client.Client.RemoteEndPoint} connected");
 
-                    // Handle each client connection in a separate async method
                     _ = HandleClientAsync(client, stoppingToken);
                 }
             }
