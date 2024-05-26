@@ -57,29 +57,35 @@ namespace DPE.QuasiVanillaProxy.Service
             {
                 Proxy = new
                 {
-                    CurrentProtocol = "Http",
+                    CurrentProtocol = "Tcp",
                     CurrentAuthentication = "",
-                    Protocol = new
+                    Source = new
                     {
                         Tcp = new
                         {
                             ProxyIPAddress = "127.0.0.1",
-                            ProxyPort = "16000",
-                            TargetUrl = "https://example.com/",
-                            ContentTypeHeader = "text/plain"
+                            ProxyPort = 16000,
+                            StreamBufferSize = 1024,
+                            ContentTypeHeader = "text/plain",
+                            SourceTextEncoding = "UTF-8"
                         },
                         Udp = new
                         {
                             ProxyIPAddress = "127.0.0.1",
-                            ProxyPort = "16000",
-                            TargetUrl = "https://example.com/",
-                            ContentTypeHeader = "text/plain"
+                            ProxyPort = 16000,
+                            ContentTypeHeader = "text/plain",
+                            SourceTextEncoding = ""
                         },
                         Http = new
                         {
                             ProxyUrl = "http://localhost:16000",
-                            TargetUrl = "https://example.com/"
+                            SourceTextEncoding = ""
                         }
+                    },
+                    Target = new
+                    {
+                        TargetUrl = "https://example.com/",
+                        TargetTextEncoding = "UTF-8"
                     },
                     Authentication = new
                     {
@@ -169,6 +175,19 @@ namespace DPE.QuasiVanillaProxy.Service
             config["Proxy"]["Authentication"]["Basic"]["Password"] = encPassword;
 
             File.WriteAllText(configFilePath, config.ToString());
+        }
+
+
+        public Encoding? GetEncodingFromName(string encodingName)
+        {
+            List<string> supportedEncodings = new List<string>() {"utf-8","unicode","ascii"};
+            if(!supportedEncodings.Contains(encodingName.ToLower()))
+            {
+                throw new ArgumentException($"Unsupported encoding '{encodingName}'");
+            }
+            Encoding encoding = Encoding.GetEncoding(encodingName);
+
+            return encoding;
         }
     }
 }
