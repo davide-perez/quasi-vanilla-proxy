@@ -17,6 +17,7 @@ Some example of possible use-cases:
  - **Secure**: sensible properties, such as credentials in the configuration file and the JWT access token, are automatically encrypted
  - **Multi-protocol**: currently supports TCP, UDP and HTTP clients
  - **Authentication**: can take care of various authentication methods on behalf of the client. Currently supports **Basic Auth** and **OAuth2.0 with Client Credentials Flow**.
+ - **Encoding conversion**: can convert encoding in case client and server support different text encodings
  - **Extensibility**: aims to be easily customizable and extendible
 
 ## Installation
@@ -41,25 +42,30 @@ Any setting of the proxy, such as protocol, authentication and logging setups, c
 ```
 {
   "Proxy": {
-    "CurrentProtocol": "Http",
-    "CurrentAuthentication": "OAuth2_0",
-    "Protocol": {
+    "CurrentProtocol": "Udp",
+    "CurrentAuthentication": "",
+    "Source": {
       "Tcp": {
         "ProxyIPAddress": "127.0.0.1",
-        "ProxyPort": "16000",
-        "TargetUrl": "https://example.com/",
-        "ContentTypeHeader": "text/plain"
+        "ProxyPort": 16000,
+        "StreamBufferSize": 8,
+        "ContentTypeHeader": "text/plain",
+        "SourceTextEncoding": "UTF-8"
       },
       "Udp": {
         "ProxyIPAddress": "127.0.0.1",
-        "ProxyPort": "16000",
-        "TargetUrl": "https://example.com/"
-        "ContentTypeHeader": "text/plain"
+        "ProxyPort": 16000,
+        "ContentTypeHeader": "text/plain",
+        "SourceTextEncoding": "UTF-8"
       },
       "Http": {
         "ProxyUrl": "http://localhost:16000",
-        "TargetUrl": "https://example.com/"
+        "SourceTextEncoding": "UTF-8"
       }
+    },
+    "Target": {
+      "TargetUrl": "https://example.com/",
+      "TargetTextEncoding": "UTF-8"
     },
     "Authentication": {
       "Basic": {
