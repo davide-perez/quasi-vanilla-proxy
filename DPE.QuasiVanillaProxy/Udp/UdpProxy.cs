@@ -10,13 +10,14 @@ namespace DPE.QuasiVanillaProxy.Udp
     public class UdpProxy : IProxy
     {
         private readonly HttpClient _httpClient;
-        private UdpClient _client;
+        private UdpClient? _udpClient;
 
         public IPAddress IPAddress { get; set; }
         public int Port { get; set; }
         public Uri? TargetUrl { get; set; }
-        public Encoding Encoding { get; set; } = Encoding.UTF8;
         public string FixedContentType { get; set; } = "text/plain";
+        public Encoding? SourceEncoding { get; set; }
+        public Encoding? TargetEncoding { get; set; }
         public ILogger<IProxy> Logger { get; private set; }
         public bool IsRunning { get; private set; }
 
@@ -27,7 +28,6 @@ namespace DPE.QuasiVanillaProxy.Udp
             _httpClient = httpClientFactory.CreateClient("proxy");
         }
 
-
         public UdpProxy(IHttpClientFactory httpClientFactory, UdpProxySettings settings, ILogger<IProxy> logger)
         {
             Logger = logger ?? NullLogger<IProxy>.Instance;
@@ -35,10 +35,11 @@ namespace DPE.QuasiVanillaProxy.Udp
             Port = settings.ProxyPort;
             TargetUrl = settings.TargetUrl ?? throw new ArgumentNullException(nameof(TargetUrl));
             FixedContentType = settings.ContentTypeHeader ?? "text/plain";
+            SourceEncoding = settings.SourceEncoding;
+            TargetEncoding = settings.TargetEncoding;
             _httpClient = httpClientFactory.CreateClient("proxy");
             _httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("QuasiVanillaProxy");
         }
-
 
         public async Task StartAsync(CancellationToken stoppingToken)
         {
@@ -59,92 +60,84 @@ namespace DPE.QuasiVanillaProxy.Udp
                 throw new ArgumentException(nameof(TargetUrl));
             }
 
-            Logger.LogInformation($"Starting Udp proxy on {IPAddress}:{Port} and forwarding to {TargetUrl}");
+            Logger.LogInformation($"Starting UDP proxy on {IPAddress}:{Port} and forwarding to {TargetUrl}");
 
-            _client = new UdpClient(new IPEndPoint(IPAddress, Port));
+            _udpClient = new UdpClient(new IPEndPoint(IPAddress, Port));
             IsRunning = true;
 
             try
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    UdpReceiveResult result = await _client.ReceiveAsync();
-                    Logger.LogDebug($"Connection established");
+                    UdpReceiveResult result = await _udpClient.ReceiveAsync().WithCancellation(stoppingToken);
+                    Logger.LogInformation($"Received data from {result.RemoteEndPoint}");
 
-                    using (MemoryStream buffer = new MemoryStream(result.Buffer))
-                    {
-                        byte[] payload = buffer.ToArray();
-                        HttpResponseMessage response = await ForwardAsync(payload, stoppingToken);
-                        if (response != null)
-                        {
-                            try
-                            {
-                                Logger.LogDebug("Response:\n{@Response}", response);
-                                if (response.IsSuccessStatusCode)
-                                    Logger.LogInformation($"Forwarding completed");
-                                else
-                                    Logger.LogError($"An error occured while forwarding: {response.StatusCode} {response.ReasonPhrase}");
-                            }
-                            finally
-                            {
-                                response.Dispose();
-                            }
-                        }
-                    }
+                    _ = HandleClientAsync(result, stoppingToken);
                 }
             }
             catch (OperationCanceledException)
             {
-                Logger.LogDebug("Udp proxy stopped due to a cancellation request.");
-            }
-            catch (SocketException ex)
-            {
-                Logger.LogDebug($"Socket exception: {ex}");
-            }
-            finally
-            {
-                if (IsRunning)
-                {
-                    _client.Dispose();
-                    IsRunning = false;
-                }
+                Logger.LogDebug("UDP proxy stopped due to a cancellation request.");
             }
         }
 
 
+        private async Task HandleClientAsync(UdpReceiveResult result, CancellationToken stoppingToken)
+        {
+            try
+            {
+                HttpResponseMessage? response = await ForwardAsync(result.Buffer, stoppingToken);
+                if (response != null)
+                {
+                    try
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            Logger.LogInformation($"Forwarding completed successfully");
+                        }
+                        else
+                        {
+                            Logger.LogError($"An error occurred while forwarding: {response.StatusCode} {response.ReasonPhrase}");
+                        }
+                    }
+                    finally
+                    {
+                        response.Dispose();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Exception in client handling: {ex}");
+            }
+        }
+
         public async Task<HttpResponseMessage?> ForwardAsync(byte[] payload, CancellationToken stoppingToken)
         {
+            HttpRequestMessage request = null;
+            HttpResponseMessage response = null;
+
             try
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    HttpRequestMessage request = CreateProxyHttpRequest(payload);
-
-                    string payloadTxt = "";
-                    if (request.Content != null)
-                    {
-                        payloadTxt = await request.Content.ReadAsStringAsync();
-                    }
-                    Logger.LogDebug($"Message content: \n\n{payloadTxt}\n");
-                    Logger.LogDebug("Client for forwarding:\n{@Request}", _httpClient);
-
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
-
-                    return response;
+                    request = CreateProxyHttpRequest(payload);
+                    Logger.LogDebug("Request:\n{@Request}", request);
+                    response = await _httpClient.SendAsync(request, stoppingToken);
+                    Logger.LogDebug("Response:\n{@Response}", response);
                 }
             }
             catch (HttpRequestException ex)
             {
-                // TODO: additional error handling, retries, ...
+                Logger.LogError($"HttpRequestException: {ex.Message}");
             }
             catch (OperationCanceledException)
             {
                 Logger.LogDebug("Forwarding canceled due to a cancellation request");
             }
 
-            return null;
+            return response;
         }
-
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
@@ -152,17 +145,15 @@ namespace DPE.QuasiVanillaProxy.Udp
             {
                 throw new InvalidOperationException("Proxy is not running");
             }
-            _client.Dispose();
+            _udpClient?.Close();
             IsRunning = false;
 
             await Task.CompletedTask;
         }
 
-
-        private HttpRequestMessage CreateProxyHttpRequest(byte[] payload)
+        private HttpRequestMessage CreateProxyHttpRequest(byte[] data)
         {
-            return null;
-            // return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, contentStream, FixedContentType);
+            return HttpUtils.CreateHttpRequest(TargetUrl, HttpMethod.Post, data, FixedContentType, SourceEncoding, TargetEncoding, Logger);
         }
     }
 }

@@ -80,10 +80,6 @@ namespace DPE.QuasiVanillaProxy.Http
             {
                 Logger.LogDebug("Proxy stopped due to a cancellation request.");
             }
-            finally
-            {
-                IsRunning = false;
-            }
         }
 
 

@@ -1,6 +1,6 @@
 {
   "Proxy": {
-    "CurrentProtocol": "Http",
+    "CurrentProtocol": "Udp",
     "CurrentAuthentication": "",
     "Source": {
       "Tcp": {
@@ -14,7 +14,7 @@
         "ProxyIPAddress": "127.0.0.1",
         "ProxyPort": 16000,
         "ContentTypeHeader": "text/plain",
-        "SourceTextEncoding": ""
+        "SourceTextEncoding": "UTF-8"
       },
       "Http": {
         "ProxyUrl": "http://localhost:16000",

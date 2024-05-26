@@ -90,14 +90,6 @@ namespace DPE.QuasiVanillaProxy.Tcp
             {
                 Logger.LogDebug($"Socket exception: {ex}");
             }
-            finally
-            {
-                if (IsRunning)
-                {
-                    _listener.Stop();
-                    IsRunning = false;
-                }
-            }
         }
 
 
